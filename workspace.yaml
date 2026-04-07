@@ -1,0 +1,41 @@
+schemaVersion: 2.2.2
+metadata:
+  name: dqc-workspace
+
+components:
+  - name: tools
+    container:
+      image: registry.redhat.io/devspaces/udi-rhel9:latest
+      mountSources: true
+
+      memoryLimit: 7Gi
+      cpuLimit: "1000m"
+
+      endpoints:
+        - name: angular
+          targetPort: 4200
+          exposure: public
+        - name: api
+          targetPort: 5000
+          exposure: public
+
+commands:
+  - id: install
+    exec:
+      component: tools
+      workingDir: /projects/dqc
+      commandLine: |
+        cd Back && npm install
+        cd ../Front-ng && npm install
+
+  - id: run-back
+    exec:
+      component: tools
+      workingDir: /projects/dqc/Back
+      commandLine: npm run dev
+
+  - id: run-front
+    exec:
+      component: tools
+      workingDir: /projects/dqc/Front-ng
+      commandLine: npx ng serve --host 0.0.0.0
