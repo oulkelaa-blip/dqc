@@ -45,12 +45,7 @@ components:
     volume:
       size: 2Gi
 
-# =========================
-# COMMANDES
-# =========================
-
 commands:
-
   - id: install-all
     exec:
       label: Install dependencies
@@ -69,23 +64,49 @@ commands:
 
   - id: start-back
     exec:
-      label: Start backend (npm start)
+      label: Start backend
       component: runtime
       workingDir: /projects/dqc
       commandLine: |
+        set -e
         mkdir -p /tmp/dqc
-        pkill -f "node" || true
+
+        if [ ! -f package.json ]; then
+          echo "Missing /projects/dqc/package.json" > /tmp/dqc/back.log
+          exit 0
+        fi
+
+        if [ ! -d node_modules ]; then
+          echo "Installing backend dependencies..."
+          npm install
+        fi
+
+        pkill -f "back/server.js" || true
         nohup npm start > /tmp/dqc/back.log 2>&1 &
+        exit 0
 
   - id: start-front
     exec:
-      label: Start frontend (Angular)
+      label: Start frontend
       component: runtime
       workingDir: /projects/dqc/front-ng
       commandLine: |
+        set -e
         mkdir -p /tmp/dqc
+
+        if [ ! -f package.json ]; then
+          echo "Missing /projects/dqc/front-ng/package.json" > /tmp/dqc/front.log
+          exit 0
+        fi
+
+        if [ ! -d node_modules ]; then
+          echo "Installing frontend dependencies..."
+          npm install
+        fi
+
         pkill -f "ng serve" || true
         nohup npm start > /tmp/dqc/front.log 2>&1 &
+        exit 0
 
   - id: logs
     exec:
@@ -93,11 +114,8 @@ commands:
       component: runtime
       workingDir: /projects/dqc
       commandLine: |
+        touch /tmp/dqc/back.log /tmp/dqc/front.log
         tail -f /tmp/dqc/back.log /tmp/dqc/front.log
-
-# =========================
-# AUTO START
-# =========================
 
 events:
   postStart:
