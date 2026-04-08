@@ -5,7 +5,7 @@ metadata:
 components:
   - name: dqc-tools
     container:
-      image: quay.io/devfile/universal-developer-image:nodejs18-latest
+      image: registry.redhat.io/devspaces/udi-rhel9:latest
       mountSources: true
       memoryRequest: 1Gi
       memoryLimit: 2Gi
