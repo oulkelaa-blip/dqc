@@ -10,66 +10,94 @@ components:
     container:
       image: registry.redhat.io/devspaces/udi-rhel9:latest
       mountSources: true
+
       memoryRequest: 1Gi
       memoryLimit: 2Gi
       cpuRequest: "100m"
       cpuLimit: "500m"
+
       env:
-        - name: DQC_DEVFILE_ACTIVE
-          value: "YES"
         - name: NODE_ENV
           value: development
         - name: CHOKIDAR_USEPOLLING
           value: "true"
-        - name: CHOKIDAR_INTERVAL
-          value: "1500"
         - name: WATCHPACK_POLLING
           value: "true"
+        - name: NODE_OPTIONS
+          value: "--max-old-space-size=1536"
+
       endpoints:
         - name: front
           exposure: public
           protocol: https
           targetPort: 4200
+
         - name: back
           exposure: public
           protocol: https
           targetPort: 5000
 
+      volumeMounts:
+        - name: npm-cache
+          path: /home/user/.npm
+
   - name: npm-cache
     volume:
       size: 2Gi
 
+# =========================
+# COMMANDES
+# =========================
+
 commands:
+
   - id: install-all
     exec:
-      label: Install all dependencies
+      label: Install dependencies
       component: runtime
       workingDir: /projects/dqc
       commandLine: |
         set -e
+        echo "Installing backend..."
         npm install
-        cd /projects/dqc/front-ng
+
+        echo "Installing frontend..."
+        cd front-ng
         npm install
+
+        echo "Done."
 
   - id: start-back
     exec:
-      label: Start backend
+      label: Start backend (npm start)
       component: runtime
       workingDir: /projects/dqc
       commandLine: |
         mkdir -p /tmp/dqc
-        pkill -f "node back/server.js" || true
-        nohup node back/server.js > /tmp/dqc/back.log 2>&1 &
+        pkill -f "node" || true
+        nohup npm start > /tmp/dqc/back.log 2>&1 &
 
   - id: start-front
     exec:
-      label: Start frontend
+      label: Start frontend (Angular)
       component: runtime
       workingDir: /projects/dqc/front-ng
       commandLine: |
         mkdir -p /tmp/dqc
         pkill -f "ng serve" || true
         nohup npm start > /tmp/dqc/front.log 2>&1 &
+
+  - id: logs
+    exec:
+      label: Show logs
+      component: runtime
+      workingDir: /projects/dqc
+      commandLine: |
+        tail -f /tmp/dqc/back.log /tmp/dqc/front.log
+
+# =========================
+# AUTO START
+# =========================
 
 events:
   postStart:
