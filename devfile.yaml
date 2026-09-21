@@ -1,21 +1,53 @@
-schemaVersion: 2.2.0
+schemaVersion: 2.2.2
 
 metadata:
-  name: dqc-devspace
+  name: mydqc
+
+attributes:
+  controller.devfile.io/storage-type: per-workspace
+
+projects:
+  - name: mydqc
+    git:
+      remotes:
+        origin: https://git.cloud.safran/safranae/saepfawsdqcockpit/awsdqcockpit/dqc.git
 
 components:
-  - name: tools
+  - name: runtime
     container:
       image: registry.redhat.io/devspaces/udi-rhel9:latest
+      mountSources: true
 
       memoryRequest: 2Gi
       memoryLimit: 6Gi
-
-      cpuRequest: "100m"
-      cpuLimit: "500m"
-
-      mountSources: true
+      cpuRequest: "500m"
+      cpuLimit: "2"
 
       env:
+        - name: NODE_ENV
+          value: development
+        - name: CHOKIDAR_USEPOLLING
+          value: "true"
+        - name: WATCHPACK_POLLING
+          value: "true"
         - name: NODE_OPTIONS
           value: "--max-old-space-size=4096"
+
+      endpoints:
+        - name: front
+          exposure: public
+          protocol: https
+          targetPort: 4200
+
+        - name: back
+          exposure: public
+          protocol: https
+          targetPort: 5000
+
+      volumeMounts:
+        - name: npm-cache
+          path: /home/user/.npm
+
+  - name: npm-cache
+    volume:
+      size: 2Gi
