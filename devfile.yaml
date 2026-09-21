@@ -1,123 +1,21 @@
-schemaVersion: 2.2.2
-metadata:
-  name: dqc
+schemaVersion: 2.2.0
 
-attributes:
-  controller.devfile.io/storage-type: per-workspace
+metadata:
+  name: dqc-devspace
 
 components:
-  - name: runtime
+  - name: tools
     container:
       image: registry.redhat.io/devspaces/udi-rhel9:latest
-      mountSources: true
 
-      memoryRequest: 1Gi
-      memoryLimit: 2Gi
+      memoryRequest: 2Gi
+      memoryLimit: 6Gi
+
       cpuRequest: "100m"
       cpuLimit: "500m"
 
+      mountSources: true
+
       env:
-        - name: NODE_ENV
-          value: development
-        - name: CHOKIDAR_USEPOLLING
-          value: "true"
-        - name: WATCHPACK_POLLING
-          value: "true"
         - name: NODE_OPTIONS
-          value: "--max-old-space-size=1536"
-
-      endpoints:
-        - name: front
-          exposure: public
-          protocol: https
-          targetPort: 4200
-
-        - name: back
-          exposure: public
-          protocol: https
-          targetPort: 5000
-
-      volumeMounts:
-        - name: npm-cache
-          path: /home/user/.npm
-
-  - name: npm-cache
-    volume:
-      size: 2Gi
-
-commands:
-  - id: install-all
-    exec:
-      label: Install dependencies
-      component: runtime
-      workingDir: /projects/dqc
-      commandLine: |
-        set -e
-        echo "Installing backend..."
-        npm install
-
-        echo "Installing frontend..."
-        cd front-ng
-        npm install
-
-        echo "Done."
-
-  - id: start-back
-    exec:
-      label: Start backend
-      component: runtime
-      workingDir: /projects/dqc
-      commandLine: |
-        set -e
-        mkdir -p /tmp/dqc
-
-        if [ ! -f package.json ]; then
-          echo "Missing /projects/dqc/package.json" > /tmp/dqc/back.log
-          exit 0
-        fi
-
-        if [ ! -d node_modules ]; then
-          echo "Installing backend dependencies..."
-          npm install
-        fi
-
-        pkill -f "back/server.js" || true
-        nohup npm start > /tmp/dqc/back.log 2>&1 &
-        exit 0
-
-  - id: start-front
-    exec:
-      label: Start frontend
-      component: runtime
-      workingDir: /projects/dqc/front-ng
-      commandLine: |
-        set -e
-        mkdir -p /tmp/dqc
-
-        if [ ! -f package.json ]; then
-          echo "Missing /projects/dqc/front-ng/package.json" > /tmp/dqc/front.log
-          exit 0
-        fi
-
-        if [ ! -d node_modules ]; then
-          echo "Installing frontend dependencies..."
-          npm install
-        fi
-
-        pkill -f "ng serve" || true
-        nohup npm start > /tmp/dqc/front.log 2>&1 &
-        exit 0
-
-  - id: logs
-    exec:
-      label: Show logs
-      component: runtime
-      workingDir: /projects/dqc
-      commandLine: |
-        touch /tmp/dqc/back.log /tmp/dqc/front.log
-        tail -f /tmp/dqc/back.log /tmp/dqc/front.log
-
-events:
-  postStart:
-    - start-back
-    - start-front
+          value: "--max-old-space-size=4096"
